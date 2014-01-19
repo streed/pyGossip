@@ -1,0 +1,4 @@
+pyGossip
+========
+
+Gossiping Service
