@@ -37,6 +37,8 @@ Response:
 }
 ```
 
+The _body_ atrtibutes of the above message portions contain, for the most part, business specific logic. In the _response_ the _body_ contains any extra information that is required, used exclusively for error statements and debug output if it is requested. 
+
 RESTful Interface
 =================
 
@@ -56,7 +58,7 @@ curl -X GET http://localhost -H "Content-Type: application/json"
     'total_letters_received': 100, 
     'total_healthy_nodes': 3, 
     'total_unhealthy_nodes': 2, 
-    'view': 
+    'neighborhood': 
     [ 
       '192.168.1.1', 
       '192.168.1.2', 
@@ -79,12 +81,12 @@ curl -X GET http://localhost -H "Content-Type: application/json"
 Setup a new mailbox:
 ```bash
 curl -X GET http://localhost/mailbox -H "Content-Type: application/json" \
--d "{ 'sender': '127.0.0.1', 'ttl': -1, 'letter': { 'action': 'new_mailbox', 'body': { 'name': 'ants', 'size': 100 } } }"
+-d "{ 'sender': '127.0.0.1', 'ttl': -1, 'letter': { 'action': 'new_mailbox', 'body': { 'name': 'ants', 'size': 100, 'methods': [ 'election', 'append_entries', 'new_term' ] } } }"
 ```
 
 ```javascript
 { 
-  'status': 200, 
+  'status': 200,
   'body': {} 
 }
 ```
@@ -183,3 +185,26 @@ curl -X DELETE http://localhost/mailbox/ants -H "Content-Type: application/json"
   'body': {} 
 }
 ```
+
+Add a new node to the network:
+
+```bash
+curl -X POST http://localhost/mailbox/system -H "Content-Type: application/json" \
+-d "{'sender': '192.168.1.11', 'timestamp': 1234567899, 'ttl': -1, 'letter': { 'action': 'new_node', 'body': { 'who': '192.168.1.12' } } }"
+```
+
+```javascript
+{
+  'status': 200,
+  'body': {}
+}
+```
+
+RESTful Letter Routing
+======================
+
+Letterss are routed in the following manner.
+
+* The new letter is received. If it is sent to the _system_ mailbox then the letter is processed by calling the specific method specified in the _action_ attribute. The parameter to this method will be the keyword arguments specified in the _body_ attribute of the letter.
+* If the letter is going to a business specific mailbox then the letters are filtered based on the accepted methods. These methods are specificed at mailbox creation.
+* If there is a _ttl_ and it is greater than >0 at creation then the following will happen. When the letter is received it will decrement the _ttl_ and if it is still greater than 0 then the letter will be sent to this nodes neighborhood.
