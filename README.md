@@ -230,13 +230,13 @@ As more daemon instances are run they follow the same startup procedure.
 More command line arguments are:
 
 ```bash
-  --help Displays this help message
-  --verbose Displays logs to stdout
-  --debug Does the verbose setting as well as displays more detailed messages to stdout
+--help Displays this help message
+--verbose Displays logs to stdout
+--debug Does the verbose setting as well as displays more detailed messages to stdout
   
-  --seed <host>[:port] The host to get its initial view of the network from
-  --host <host> The ip address to bind to, the daemon binds to port 65500 by default
-  --port <port> The port to bind to
+--seed <host>[:port] The host to get its initial view of the network from
+--host <host> The ip address to bind to, the daemon binds to port 65500 by default
+--port <port> The port to bind to
 ```
 
 Once the instance is running a simple tool called _simpleInfo_ will allow for read-only access to the daemon to get information out of the daemon itself. An example would be:
@@ -249,17 +249,14 @@ simpleInfo list_mailboxes
 Other commands include:
 
 ```bash
-
-  --help Displays this help message
-  --verbose Displays logs to stdout
-  --debug Does the verbose setting as well as displays more detailed messages to stdout
+--help Displays this help message
+--verbose Displays logs to stdout
+--debug Does the verbose setting as well as displays more detailed messages to stdout
   
-  list_mailboxes Returns a list of mailboxes.
-  list_mailbox <mailbox name> Returns the information of a specific mailbox
-  letters <mailbox> Returns a list of letters in the specified mailbox.
-  send <mailbox> [ttl] <body> This will send a message to the specifed mailbox with an optional ttl with the associated body
+list_mailboxes Returns a list of mailboxes.
+list_mailbox <mailbox name> Returns the information of a specific mailbox
+letters <mailbox> Returns a list of letters in the specified mailbox.
+send <mailbox> [ttl] <body> Send a message to the specifed mailbox with an optional ttl and the provided body (json string)
 ```
 
 This tool will be used to debug the daemon itself and provide a mechanism to ensure the working of the system itself.
-
-
