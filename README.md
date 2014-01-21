@@ -79,7 +79,7 @@ curl -X GET http://localhost -H "Content-Type: application/json"
 
 Setup a new mailbox:
 ```bash
-curl -X GET http://localhost/mailbox -H "Content-Type: application/json" \
+curl -X POST http://localhost/mailbox -H "Content-Type: application/json" \
 -d "{ 'sender': '127.0.0.1', 'ttl': -1, 'letter': { 'action': 'new_mailbox', 'body': { 'name': 'ants', 'size': 100, 'methods': [ 'election', 'append_entries', 'new_term' ] } } }"
 ```
 
