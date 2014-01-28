@@ -1,6 +1,8 @@
 simpleGossip by Sean Reed
 =========================
 
+![](https://travis-ci.org/streed/simpleGossip.png)
+
 A Gossiping daemon that namespaces messages, letters, out into different destinations, mailboxes. These namespaces allow for system specific messages to be seperate from business logic messages. For example there is always a _system_ mailbox, but it only handles letters that describe the gossiping itself. Another namespace could be called _people_ this namespace would contain messages that contain information about _people_ rather than _system_ information. This allows for varying differnt local services to use a single daemon as well as partition out the business logic out into seperate mailboxes allow for a more organized approach.
 
 JSON Format
