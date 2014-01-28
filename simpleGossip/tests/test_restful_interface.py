@@ -2,6 +2,8 @@ import unittest
 
 from ..app import app
 
+from flask import json
+
 class TestGossipingRestful( unittest.TestCase ):
 
   def setUp( self ):
@@ -9,6 +11,8 @@ class TestGossipingRestful( unittest.TestCase ):
     
   def test_get_gossiping_information( self ):
     info = self.app.get( "/" )
+
+    info = json.loads( info.data )
     
     self.assertEquals( { 
                           'status': 200, 
@@ -20,7 +24,7 @@ class TestGossipingRestful( unittest.TestCase ):
                             'total_letters_received': 0, 
                             'total_healthy_nodes': 0, 
                             'total_unhealthy_nodes': 0, 
-                            'view': []
+                            'view': [],
                             'mailboxes': 
                             [ 
                               { 
@@ -33,3 +37,13 @@ class TestGossipingRestful( unittest.TestCase ):
                         }, info )
                         
             
+    def test_get_mailboxes_when_empty( self ):
+        mailboxes = self.app.get( "/mailboxes" )
+
+        self.assertEquals( { 
+                            'status': 200,
+                            'body':
+                            {
+                                'mailboxes': [] 
+                            }
+                        }, mailboxes )

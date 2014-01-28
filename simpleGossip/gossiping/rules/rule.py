@@ -1,3 +1,0 @@
-
-class Rule( object ):
-	pass
