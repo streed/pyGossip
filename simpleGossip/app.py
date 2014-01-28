@@ -11,3 +11,9 @@ api = Api( app )
 api.add_resource( InformationResource, "/" )
 api.add_resource( MailboxManagerResource, "/mailbox" )
 api.add_resource( MailboxResource, "/mailbox/<string:name>" )
+
+from gossiping.gossip import Gossip
+from mailbox.router import Router
+
+router = Router()
+gossip = Gossip( router=router, seed=[], fanout=10 )

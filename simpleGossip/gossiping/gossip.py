@@ -1,9 +1,18 @@
 from ..mailbox.mailbox import Mailbox
 from ..mailbox.router import Router
 
+class _Singleton( type ):
+    _instances = {}
+    def __call__( cls, *args, **kwargs ):
+        if cls not in cls._instances:
+            cls._instances[cls] = super( _Singleton, cls ).__call__( *args, **kwargs )
+        return cls._instances[cls]
+
 class Gossip( object ):
 
-    def __init__( self, router=None seed=[], fanout=10 )
+    __metaclass__ = _Singleton
+
+    def __init__( self, router=None, seed=[], fanout=10 ):
         self.router = router
         self.total_nodes = 0
         self.total_letters_sent = 0
