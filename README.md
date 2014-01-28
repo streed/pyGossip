@@ -69,8 +69,8 @@ curl -X GET http://localhost -H "Content-Type: application/json"
     [ 
       { 
         'name': 'system', 
-        'mailbox_size': 100, 
-        'mailbox_queue': 10 
+        'uri': 'http://localhost/mailbox/system',
+        'total_messages': 0
       } 
     ] 
   } 
