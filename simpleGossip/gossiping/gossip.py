@@ -1,46 +1,48 @@
-from ..mailbox.mailbox import Mailbox
-from ..mailbox.router import Router
+import rpyc
+from ..mailbox.mailbox import RedisMailbox
+from ..mailbox.letter import SuccessLetter, ErrorLetter, ViewLetter
 
-class _Singleton( type ):
-    _instances = {}
-    def __call__( cls, *args, **kwargs ):
-        if cls not in cls._instances:
-            cls._instances[cls] = super( _Singleton, cls ).__call__( *args, **kwargs )
-        return cls._instances[cls]
+class GossipService( object ):
+    def __init__( self, seed=[], fanout=10 ):
+        pass
+    
+class RemoteGossipService( GossipService, rpyc.Service ):
 
-class Gossip( object ):
+    def __init__( self, seed=[], fanout=10 ):
+        super( RemoteGossipService, self ).__init__( seed=seed, fanout=fanout )
 
-    __metaclass__ = _Singleton
-
-    def __init__( self, router=None, seed=[], fanout=10 ):
-        self.router = router
+    def on_connect( self ):
         self.total_nodes = 0
         self.total_letters_sent = 0
         self.total_letters_received = 0
         self.total_healthy_nodes = 0
         self.total_unhealthy_nodes = 0
 
-        self.system = Mailbox( "system" )
 
-        self.neighborhood = seed
-        self.fanout = fanout
+        self.mailboxes = {}
+        self.mailboxes["system"] = RedisMailbox( "system" )
 
-        if( self.router ):
-            self.router.add_route( "new_node", self.new_node )
-            self.router.add_route( "dead_nodea", self.dead_node )
-            self.router.add_route( "view", self.view )
+        self.neighborhood = []
+        self.fanout = 10
 
+    def on_disconnect( self ):
+        pass
 
-    def new_node( self, letter ):
+    def exposed_new_node( self, letter ):
+        if self.mailboxes["system"].put( letter ):
+            return SuccessLetter()
+        else:
+            return ErrorLetter( "Could not save letter" )
+
+    def exposed_dead_node( self, letter ):
         return letter
 
-    def dead_node( self, letter ):
-        return letter
+    def exposed_view( self, letter ):
+        print dir( letter.view )
 
-    def view( self, letter ):
-        return letter
+        return ViewLetter( self.neighborhood )
 
-    def to_dict( self ):
+    def exposed_info( self ):
         return dict(
                     fanout=self.fanout,
                     neighborhood=self.neighborhood,
@@ -49,3 +51,58 @@ class Gossip( object ):
                     total_letters_received=self.total_letters_received,
                     total_healthy_nodes=self.total_healthy_nodes,
                     total_unhealthy_nodes=self.total_unhealthy_nodes )
+
+class GossipServiceClient( object ):
+
+    def __init__( self, name ):
+        self.name = name
+    
+    def new_node( self, letter ):
+        pass
+
+    def dead_node( self, letter ):
+        pass
+
+    def view( self, letter ):
+        pass
+
+    def info( self ):
+        pass
+
+class LocalTestGossipServiceClient( GossipServiceClient ):
+    def __init__( self, name, service ):
+        super( GossipServiceClient, self ).__init__( name )
+
+        self.service = service
+
+    def new_node( self, letter ):
+        return self.service.new_node( letter )
+
+    def dead_node( self, letter ):
+        return self.service.dead_node( letter )
+
+    def view( self, letter ):
+        return self.service.view( letter )
+
+    def info( self ):
+        return self.service.info()
+
+class RemoteGossipServiceClient( GossipServiceClient ):
+
+    def __init__( self, name ):
+        super( RemoteGossipServiceClient, self ).__init__( name )
+
+        self.conn = rpyc.connect( self.name, 18861 )
+
+    def new_node( self, letter ):
+        return self.conn.root.new_node( letter )
+
+    def dead_node( self, letter ):
+        return self.conn.root.dead_node( letter )
+
+    def view( self, letter ):
+        return self.conn.root.view( letter )
+
+    def info( self ):
+        return self.conn.root.info()
+

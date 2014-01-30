@@ -1,16 +1,51 @@
 import redis
 
-from flask import json
-
-from schema import Schema, And, Use, Optional
-
-Letter = Schema( And( Use( json.loads ),
-					{ "sender": And( basestring, len ),
-					"ttl": And( Use( int ), lambda n: n >= -1 ),
-					"timestamp": Use( int ),
-					"letter": object } ) )
-
 class Mailbox( object ):
+    def __init__( self, mailbox_name ):
+        self.name = mailbox_name
+
+    def empty( self ):
+        pass
+
+    def put( self, letter ):
+        pass
+
+    def get( self ):
+        pass
+
+    def get_all( self ):
+        pass
+
+    def __len__( self ):
+        return 0
+
+class MemoryMailbox( Mailbox ):
+    def __init__( self, mailbox_name ):
+        super( Mailbox, self ).__init__( mailbox_name )
+
+        self.mailbox = []
+
+    def __len__( self ):
+        return len( self.mailbox )
+
+    def empty( self ):
+        return len( self ) == 0
+
+    def put( self, letter ):
+        self.mailbox.append( letter )
+
+        return True
+
+    def get( self ):
+        return self.mailbox.pop( 0 )
+
+    def get_all( self ):
+        ret = self.mailbox[:]
+        self.mailbox = []
+
+        return ret
+
+class RedisMailbox( Mailbox ):
 	
 	def __init__( self, mailbox_name, **redis_settings ):
 		self.mailbox = redis.Redis( **redis_settings )
@@ -29,8 +64,7 @@ class Mailbox( object ):
 		"""This takes a raw string version of the letter then validates it
 		and finally dumps it into the proper json format and saves it to the
 		queue."""
-		out = Letter.validate( letter )
-		self.mailbox.rpush( self.key, json.dumps( out ) )
+		return self.mailbox.rpush( self.key, letter )
 		
 	def get( self, block=True, timeout=None ):
 		""" This will return the top most letter from the queue."""
@@ -49,11 +83,6 @@ class Mailbox( object ):
 		
 		if letters:
 			self.mailbox.delete( self.key )
-			
-		ret = []
-		
-		for l in letters:
-			out = Letter.validate( l )
-			ret.append( out )
-			
+				
 		return ret
+
