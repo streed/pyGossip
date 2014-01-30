@@ -8,39 +8,91 @@ class GossipService( object ):
     
 class RemoteGossipService( GossipService, rpyc.Service ):
 
+    initialized = False
+
     def __init__( self, seed=[], fanout=10 ):
         super( RemoteGossipService, self ).__init__( seed=seed, fanout=fanout )
 
     def on_connect( self ):
-        self.total_nodes = 0
-        self.total_letters_sent = 0
-        self.total_letters_received = 0
-        self.total_healthy_nodes = 0
-        self.total_unhealthy_nodes = 0
+        if not self.initialized:
+            self.total_nodes = 0
+            self.total_letters_sent = 0
+            self.total_letters_received = 0
+            self.total_healthy_nodes = 0
+            self.total_unhealthy_nodes = 0
 
 
-        self.mailboxes = {}
-        self.mailboxes["system"] = RedisMailbox( "system" )
+            self.mailboxes = {}
+            self.mailboxes["system"] = RedisMailbox( "system" )
 
-        self.neighborhood = []
-        self.fanout = 10
+            self.neighborhood = []
+            self.fanout = 10
 
     def on_disconnect( self ):
         pass
 
-    def exposed_new_node( self, letter ):
-        if self.mailboxes["system"].put( letter ):
-            return SuccessLetter()
-        else:
-            return ErrorLetter( "Could not save letter" )
+    def exposed_new_node( self, node ):
+        """
+            This takes the passed in node and wraps it up and sends it to
+            the mailbox.
 
-    def exposed_dead_node( self, letter ):
-        return letter
+            self - Is defined.
+            node - is a string representing either a ip or a hostname.
+        """
+        return self.store_letter( "system", NewNodeLetter( node ) )
 
-    def exposed_view( self, letter ):
-        print dir( letter.view )
+    def exposed_dead_node( self, node ):
+        """
+            This takes the passed in node and wraps it up and sends it to
+            the mailbox.
 
-        return ViewLetter( self.neighborhood )
+            self - Is defined.
+            node - is a string representing either a ip or a hostname.
+        """
+        return self.store_letter( "system", DeadNodeLetter( node ) ):
+
+    def exposed_view( self, view ):
+        """
+            This takes the passed in node and wraps it up and sends it to
+            the mailbox.
+
+            self - Is defined.
+            node - is a string representing either a ip or a hostname.
+        """
+        return self.store_letter( "system", ViewLetter( view ) ):
+
+    def exposed_get_letters( self, mailbox ):
+        """
+            This will return the letters for a specific mailbox.
+
+            self - Is defined.
+            mailbox - a string representing a mailbox.
+        """
+        return self.get_letters( mailbox )
+
+    def exposed_application_letter( self, mailbox, body ):
+        """
+            This is used to send an application specific, i.e a message
+            destined for a mailbox other than system.
+
+            self - Is defined.
+            mailbox - is a string representing a mailbox 
+            body - the data for this message.
+        """
+        if mailbox in self.mailboxes and mailbox != "system":
+            self.mailboxes[mailbox].put( ApplicationLetter( body ) ) 
+
+    def exposed_broadcast( self, letter ):
+        """
+            When called this will broadcast out a message to all nodes in
+            this neighborhood.
+
+            self - Is defined.
+            letter - Is defined.
+        """
+        for n in self.neighborhood:
+            self.total_letters_sent += 1
+            n.application_letter( letter["mailbox"], letter["body"] )
 
     def exposed_info( self ):
         return dict(
@@ -51,6 +103,13 @@ class RemoteGossipService( GossipService, rpyc.Service ):
                     total_letters_received=self.total_letters_received,
                     total_healthy_nodes=self.total_healthy_nodes,
                     total_unhealthy_nodes=self.total_unhealthy_nodes )
+
+    def store_letter( self, letter ):
+        self.total_letters_received += 1
+        return self.mailboxes[mailbox].put( letter )
+
+    def get_letters( self, mailbox ):
+        return self.mailboxes[mailbox].get_all()
 
 class GossipServiceClient( object ):
 
@@ -88,6 +147,7 @@ class LocalTestGossipServiceClient( GossipServiceClient ):
         return self.service.info()
 
 class RemoteGossipServiceClient( GossipServiceClient ):
+    results = []
 
     def __init__( self, name ):
         super( RemoteGossipServiceClient, self ).__init__( name )
@@ -95,13 +155,28 @@ class RemoteGossipServiceClient( GossipServiceClient ):
         self.conn = rpyc.connect( self.name, 18861 )
 
     def new_node( self, letter ):
-        return self.conn.root.new_node( letter )
+        ret = self.conn.root.new_node( letter )
 
+        if ret:
+            pass
+        else:
+            pass
+        
     def dead_node( self, letter ):
-        return self.conn.root.dead_node( letter )
+        ret = self.conn.root.dead_node( letter )
+
+        if ret:
+            pass
+        else:
+            pass
 
     def view( self, letter ):
-        return self.conn.root.view( letter )
+        ret = self.conn.root.view( letter )
+
+        if ret:
+            pass
+        else:
+            pass
 
     def info( self ):
         return self.conn.root.info()
